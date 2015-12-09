@@ -1,0 +1,855 @@
+# [PackageDev] target_format: plist, ext: tmLanguage
+comment: Based on work from github.com/frou/GoFeather and github.com/DisposaBoy/GoSublime
+name: 'BrynGoSublime'
+scopeName: source.go
+fileTypes: [go]
+uuid: 1ceaa75c-b61d-11e2-ba93-138feb5db969
+
+patterns:
+- include: '#top-level'
+
+# - name: support.function.builtin.go
+#   match: \b(append|cap|close|complex|copy|delete|imag|len|panic|print|println|real|recover)\b
+
+
+repository:
+  types:
+    patterns:
+    - include: '#storage-types'
+
+  storage-types:
+    patterns:
+    - include: '#func-type'
+    - include: '#interface-type'
+    - include: '#chan-type'
+    - include: '#slice-type'
+    - include: '#map-type'
+    - include: '#struct-type'
+    - include: '#builtin-type'
+    # - comment: userland type
+    #   match: \b(\*)?(?:([a-zA-Z0-9_]+)(\.))?[a-zA-Z0-9_]+\b
+    #   captures:
+    #     '1': {name: punctuation.definition.type.pointer.go}
+    #     '2': {name: entity.name.package.go}
+    #     '3': {name: punctuation.definition.type.go}
+
+
+  func-type:
+    patterns:
+    - name: storage.type.closure.go
+      begin: \b(func)[\s\t]*(?=\()
+      beginCaptures:
+        '2': {name: punctuation.definition.function.go}
+      end: (?<=\))
+      endCaptures:
+        '1': {name: punctuation.definition.function.go}
+      patterns:
+      - include: '#param-list'
+      # - include: '#types'
+
+
+  builtin-type:
+    patterns:
+    - name: storage.type.builtin.go
+      match: \b(bool|byte|complex(64|128)|error|float(32|64)|rune|string|u?int(8|16|32|64)?|uintptr)\b
+
+
+  slice-type:
+    patterns:
+    - name: storage.type.slice.go
+      begin: (\[\d*\])
+      end: (?=\s|,|;|$|\))
+      beginCaptures: { '1': {name: punctuation.declaration.slice.go} }
+      patterns:
+      - include: '#types'
+
+  chan-type:
+    patterns:
+    - name: storage.type.chan.go
+      begin: (\<\-\s?)?chan(\s?\<\-)?[\s\t]
+      end: (?=\s|\t|$|,|;|\})
+      beginCaptures:
+        '1': {name: punctuation.declaration.chan.go}
+        '2': {name: punctuation.declaration.chan.go}
+      patterns:
+      - include: '#types'
+
+  map-type:
+    patterns:
+    - name: storage.type.map.go
+      match: (map)(\[)(\w+)(\])
+      captures:
+        '1': {name: storage.type.go}
+        '2': {name: punctuation.definition.type.go}
+        '3': {name: storage.type.go}
+        '4': {name: punctuation.definition.type.go}
+
+  struct-type:
+    patterns:
+    - name: meta.declaration.struct.go
+      begin: \b(struct)\s*(\{)
+      beginCaptures:
+        '1': {name: storage.type.go}
+        '2': {name: punctuation.declaration.struct.begin.go}
+      end: (\})
+      endCaptures:
+        '1': {name: punctuation.declaration.struct.end.go}
+      patterns:
+      - include: '#struct-field'
+      - include: '#comments'
+      - include: '#embedded-type'
+      - include: '#struct-tags'
+      # - include: '#variable-dot-access'
+      - match: (\*)
+        captures: { '1': {name: punctuation.definition.type.pointer.go} }
+      - match: (\.)
+        captures: { '1': {name: punctuation.definition.type.go} }
+
+
+  interface-type:
+    patterns:
+    - name: meta.declaration.interface.go
+      begin: \b(interface)\s*(\{)
+      beginCaptures:
+        '1': {name: storage.type.go}
+        '2': {name: punctuation.declaration.interface.begin.go}
+      end: (\})
+      endCaptures:
+        '1': {name: punctuation.declaration.interface.end.go}
+      patterns:
+      - begin: \b([a-zA-Z0-9_]+)(\()
+        beginCaptures:
+          '1': {name: entity.name.function.go}
+          '2': {name: punctuation.definition.function.go}
+        end: (\))
+        endCaptures:
+          '1': {name: punctuation.definition.function.go}
+
+      - include: '#comments'
+      - include: '#types'
+      - include: '#embedded-type'
+      - match: (\*)
+        captures: { '1': {name: punctuation.definition.type.pointer.go} }
+      - match: (\.)
+        captures: { '1': {name: punctuation.definition.type.go} }
+
+
+  embedded-type:
+    patterns:
+    - name: meta.declaration.field.embedded.go
+      match: ^[\s\t]*((\*)?(?:([a-zA-Z0-9_]+)(\.))?[a-zA-Z0-9_]+)[\s\t]*(?=$|\/\/|\/\*)
+      captures:
+        '1': {name: storage.type.go}
+        '2': {name: punctuation.definition.type.pointer.go}
+        '3': {name: entity.name.package.go}
+        '4': {name: punctuation.name.type.go}
+
+
+  struct-field:
+    patterns:
+    - include: '#struct-field-inline'
+    - include: '#struct-field-normal'
+
+  struct-field-normal:
+    patterns:
+    - name: meta.definition.struct-field.go
+      contentName: storage.type.go
+      begin: \b([a-zA-Z0-9_]+)\s*(?=[a-zA-Z0-9_\*])
+      end: (?=$|`|\})
+      beginCaptures:
+        '1': {name: variable.struct-field.go}
+        # '3': {name: punctuation.separator.sequence.struct-fields.go}
+        # '4': {name: variable.struct-field.go}
+      patterns:
+      - include: '#comments'
+      - include: '#types'
+
+  struct-field-inline:
+    patterns:
+    - name: meta.definition.struct-field.inline.go
+      contentName: storage.type.go
+      begin: \b([a-zA-Z0-9_]+)(?=\s*,)
+      end: (?=[\s\t]*(?:$|`|\}))
+      beginCaptures:
+        '1': {name: variable.struct-field.go}
+        # '3': {name: punctuation.separator.sequence.struct-fields.go}
+        # '4': {name: variable.struct-field.go}
+      patterns:
+      - include: '#comments'
+      - match: '(,)[\s\t]*([a-zA-Z0-9_]+)'
+        captures:
+          '1': {name: punctuation.separator.sequence.struct-field.go}
+          '2': {name: variable.struct-field.go}
+      - include: '#types'
+
+
+  struct-tags:
+    patterns:
+    - name: string.tag.struct-field.go
+      begin: (`)
+      end: (`)
+      beginCaptures: { '1': {name: punctuation.definition.string.begin.go} }
+      endCaptures: { '1': {name: punctuation.definition.string.end.go} }
+      patterns:
+      - name: meta.struct-tag.flag.go
+        match: (\@)([a-zA-Z0-9_\.]+)
+        captures:
+          '1': {name: punctuation.definition.struct-tag.flag.go}
+          '2': {name: entity.name.struct-tag.flag.go}
+
+      - match: \b([a-z\.\-_]+)(:)
+        captures:
+          '1': {name: entity.name.tag.struct-field.go}
+          '2': {name: punctuation.definition.struct-tag.go}
+
+      - match: (=|\(|\)|,|")
+        name: punctuation.definition.struct-tag.go
+
+
+  array-definition:
+    patterns:
+    - name: meta.definition.array.go
+      match: \b(\[\])(&)?(bool|byte|complex(64|128)|error|float(32|64)|rune|string|u?int(8|16|32|64)?|uintptr)\s*(?=\{)
+      captures:
+        '1': {name: punctuation.definition.array.go}
+        '2': {name: punctuation.definition.array.go}
+        '3': {name: support.type.builtin.go}
+
+
+  variable-dot-access:
+    patterns:
+    - name: variable.dot-access.go
+      match: (?<=\.)([A-Za-z0-9_]+)\b
+
+
+  struct-declaration:
+    name: meta.struct.go
+    patterns:
+    - begin: ([a-zA-Z0-9_]+)\s+(?=struct\b)
+      end: $
+      beginCaptures: { '1': {name: entity.name.type.go} }
+      patterns:
+      - include: '#struct-type'
+
+
+  interface-declaration:
+    name: meta.interface.go
+    patterns:
+    - begin: ([a-zA-Z0-9_]+)\s+(?=interface\b)
+      end: $
+      beginCaptures: { '1': {name: entity.name.type.go} }
+      patterns:
+      - include: '#interface-type'
+
+
+  type-block:
+    patterns:
+    - name: meta.type-block.go
+      begin: \b(type)[\s\t]*(\()
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: punctuation.definition.type-block.begin.go}
+      end: (\))
+      endCaptures:
+        '1': {name: punctuation.definition.type-block.end.go}
+      patterns:
+      - include: '#comments'
+      - include: '#struct-declaration'
+      - include: '#interface-declaration'
+      - match: ^[\s\t]*([a-zA-Z0-9_]+)[\s\t]+((\*)?(?:([a-zA-Z0-9_]+)(\.))?[a-zA-Z0-9_]+)[\s\t]*$
+        captures:
+          '1': {name: entity.name.type.go}
+          '2': {name: storage.type.go}
+          '3': {name: punctuation.definition.type.pointer.go}
+          '4': {name: entity.name.package.go}
+          '5': {name: punctuation.name.type.go}
+
+      - begin: \b([a-zA-Z0-9_]+)[\s\t]+(?=[a-zA-Z0-9_\<\[\*])
+        beginCaptures:
+          '1': {name: entity.name.type.go}
+        end: $
+        patterns:
+        - include: '#types'
+        - match: \b((\*)?([a-zA-Z0-9_])?(\.)[a-zA-Z0-9_]+)\b
+          captures:
+            '1': {name: storage.type.go}
+            '2': {name: punctuation.definition.type.pointer.go}
+            '3': {name: entity.name.package.go}
+            '4': {name: punctuation.definition.type.go}
+      # - include: '#extra'
+
+
+  type-statement:
+    patterns:
+    - begin: \b(type)[\s\t]+([a-zA-Z0-9_]+)[\s\t]+
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: entity.name.type.go}
+      end: $
+      patterns:
+      - include: '#types'
+
+
+  for-loop-statement:
+    patterns:
+    - name: meta.loop.for.go
+      begin: \b(?=for\s+)
+      end: (?<=\})
+      patterns:
+      - name: meta.for-loop-header.go
+        begin: \b(for)\b
+        beginCaptures:
+          '0': {name: keyword.control.go}
+        end: (?=\{)
+        endCaptures:
+          '1': {name: punctuation.definition.loop.go}
+        patterns:
+        - match: \b([a-zA-Z0-9_]+)(?:\s*(,)\s*([a-zA-Z0-9_]+))*\b
+          captures:
+            '1': {name: variable.binding.go}
+            '2': {name: punctuation.separator.binding.go}
+            '3': {name: variable.binding.go}
+        - begin: (?<=\s)(:=)\s+(range)\s*
+          beginCaptures:
+            '1': {name: keyword.operator.assignment.go}
+            '2': {name: keyword.control.go}
+          end: (?=\{)
+          patterns:
+          - include: '#expressions'
+
+        - include: '#assignment-expr'
+        # - match: (,|;)
+        #   name: punctuation.separator.binding.go
+
+      - name: meta.for-loop.body.go
+        begin: (\{)
+        end: (\})
+        beginCaptures:
+          '1': {name: punctuation.definition.loop.go}
+        endCaptures:
+          '1': {name: punctuation.definition.loop.go}
+        patterns:
+        - include: '#code'
+
+
+  var-and-const-statements:
+    patterns:
+    - begin: \b(var|const)[\s\t]+([a-zA-Z0-9_]+)[\s\t]*
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: variable.other.go}
+      end: $
+      patterns:
+      - include: '#assignment-expr'
+      - include: '#types'
+
+  var-and-const-blocks:
+    patterns:
+    - contentName: meta.block.var.go
+      begin: \b(var|const)[\s\t]*(\()
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: punctuation.definition.var-block.begin.go}
+      end: (\))
+      endCaptures:
+        '1': {name: punctuation.definition.var-block.end.go}
+      patterns:
+      - include: '#comments'
+      - include: '#assignment-expr'
+      - match: \b([a-zA-Z0-9_]+)\b
+        name: variable.other.go
+
+
+  expressions:
+    patterns:
+    - include: '#make-expr'
+    - include: '#new-expr'
+    - include: '#type-coercion'
+    - include: '#type-cast'
+    - include: '#function-call'
+    - include: '#literals'
+    - include: '#variable-dot-access'
+
+
+  statements:
+    patterns:
+    - include: '#function-call'
+    - include: '#var-and-const-statements'
+    - include: '#var-and-const-blocks'
+    - include: '#for-loop-statement'
+    - include: '#assignment-expr'
+
+  make-expr:
+    patterns:
+    - name: meta.make-expr.go
+      begin: \b(make)(\()
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: punctuation.definition.make-expr.end.go}
+      end: \)
+      endCaptures:
+        '0': {name: punctuation.definition.make-expr.end.go}
+      patterns:
+      - name: storage.type.go
+        begin: (?<=make\()
+        end: (,)
+        endCaptures:
+          '1': {name: punctuation.separator.make-expr.go}
+        patterns:
+        - include: '#types'
+
+      - include: '#expressions'
+
+  new-expr:
+    patterns:
+    - name: meta.new-expr.go
+      contentName: storage.type.go
+      begin: \b(new)(\()
+      beginCaptures:
+        '1': {name: keyword.other.go}
+        '2': {name: punctuation.definition.new-expr.end.go}
+      end: \)
+      endCaptures:
+        '0': {name: punctuation.definition.new-expr.end.go}
+      patterns:
+      - include: '#types'
+
+  assignment-expr:
+    patterns:
+    - name: meta.assignment-expr.go
+      begin: (?<=\s)(:?=)(?=[\s\t]+)
+      beginCaptures: { '1': {name: keyword.operator.assignment.go} }
+      end: $
+      patterns:
+      - include: '#comments'
+      - include: '#literals'
+      - include: '#expressions'
+
+
+  short-initialization-expr:
+    patterns:
+    - comment: This matches the 'x := 0' style of variable declaration.
+      name: meta.initialization.short.go
+      match: (?:[[:alpha:]_][[:alnum:]_]*)(?:,\s+[[:alpha:]_][[:alnum:]_]*)*\s*(:=)
+      captures:
+        '0': {name: variable.other.go}
+        '1': {name: keyword.operator.initialize.go}
+
+
+  function-call:
+    patterns:
+    - name: meta.function-call.go
+      begin: ((\.)?|\b)(?:(append|cap|close|complex|copy|delete|imag|len|panic|print|println|real|recover)|(?!func\b)([a-zA-Z0-9_]+))(\()
+      beginCaptures:
+        # '1': {name: variable.dot-access.go}
+        '2': {name: punctuation.separator.dot-access.go}
+        '3': {name: support.function.builtin.go}
+        '4': {name: support.function.any-method.go}
+        '5': {name: punctuation.separator.function-call.begin.go}
+      end: (\))
+      endCaptures:
+        '1': {name: punctuation.separator.function-call.end.go}
+      patterns:
+      - include: '#comments'
+      - include: '#expressions'
+
+  type-cast:
+    patterns:
+    - name: meta.type-cast.go
+      begin: (?<=[^\.])(\()(\*?)(?:([a-zA-Z0-9_]+)(\.))?([a-zA-Z0-9_]+)(\)\()
+      end: \)
+      beginCaptures:
+        '1': {name: punctuation.separator.type-cast.begin.go}
+        '2': {name: punctuation.definition.type.pointer.go}
+        '3': {name: entity.name.package.go}
+        '4': {name: punctuation.definition.type.go}
+        '5': {name: storage.type.go}
+        '6': {name: punctuation.separator.type-cast.go}
+      endCaptures:
+        '0': {name: punctuation.separator.type-cast.end.go}
+      patterns:
+      - include: '#expressions'
+
+
+  type-coercion:
+    patterns:
+    - name: meta.type-coercion.go
+      begin: \.\(
+      beginCaptures:
+        '0': {name: punctuation.separator.type-cast.begin.go}
+      end: \)
+      endCaptures:
+        '0': {name: punctuation.separator.type-cast.end.go}
+      patterns:
+      - include: '#types'
+
+
+  param-list:
+    patterns:
+    - begin: \(
+      end: \)
+      beginCaptures: { '0': {name: punctuation.definition.method.begin.go} }
+      endCaptures:   { '0': {name: punctuation.definition.method.end.go} }
+      patterns:
+      - include: '#types'
+      - match: \b[a-zA-Z0-9_]+\b
+        name: variable.parameter.go
+      - name: punctuation.definition.param-list.go
+        match: ','
+
+
+  keywords:
+    patterns:
+    - comment: A subset of keyword.other.go for flow control keywords.
+      name: keyword.control.go
+      match: \b(break|case|continue|default|defer|else|fallthrough|go|goto|if|return|select|switch)\b
+
+
+
+  operators:
+    patterns:
+    - name: keyword.operator.channel.go
+      match: (<-)
+
+    - name: keyword.operator.comparison.go
+      match: (==|!=|<|<=|>|>=)
+
+    - name: keyword.operator.logical.go
+      match: (&&|[|]{2}|!)
+
+    - name: keyword.operator.increment.go
+      match: ([+]{2})
+
+    - name: keyword.operator.decrement.go
+      match: (--)
+
+    # - name: keyword.operator.assignment.go
+    #   match: (=|(?:[+]|-|[|]|^|[*]|/|%|<<|>>|&|&^)=)
+
+    - name: keyword.operator.arithmetic.go
+      match: ([+]|-|[*]|/|%|&|[|]|^|&^|<<|>>)
+
+    - name: keyword.operator.semi-colon.go
+      match: (;)
+
+  literals:
+    patterns:
+    - include: '#map-literal'
+    - include: '#struct-literal'
+    - include: '#slice-literal'
+    - include: '#strings'
+    - include: '#constants'
+    - include: '#pointer-literal'
+    - include: '#closure-literal'
+
+  pointer-literal:
+    patterns:
+    - name: meta.literal.pointer.go
+      begin: (&)
+      beginCaptures:
+        '1': {name: punctuation.definition.pointer.go}
+      end: (?=[^a-zA-Z0-9_\.])
+      patterns:
+      - include: '#struct-literal'
+      - include: '#slice-literal'
+      - include: '#map-literal'
+
+  struct-literal:
+    patterns:
+    - include: '#anonymous-struct-literal'
+    - include: '#named-struct-literal'
+
+  anonymous-struct-literal:
+    patterns:
+    - name: meta.literal.struct.go
+      begin: (&)?\s*(?=struct\s*\{)
+      beginCaptures:
+        '1': {name: punctuation.definition.pointer.go}
+      end: $
+      patterns:
+      - include: '#struct-type'
+
+      - begin: (?<=\})\s*(\{)
+        beginCaptures:
+          '1': {name: punctuation.definition.struct-literal.begin.go}
+        end: (\})
+        endCaptures:
+          '1': {name: punctuation.definition.struct-literal.end.go}
+        patterns:
+        - include: '#struct-literal-innards'
+
+  named-struct-literal:
+    patterns:
+    - name: meta.literal.struct.go
+      begin: (&)?(?:([a-zA-Z0-9_]+)(\.))?([A-Za-z0-9_]+)(\{)
+      beginCaptures:
+        '1': {name: punctuation.definition.pointer.go}
+        '2': {name: entity.name.package.go}
+        '3': {name: punctuation.definition.type.go}
+        '4': {name: storage.type.go}
+        '5': {name: punctuation.definition.struct.begin.go}
+      end: (\})
+      endCaptures:
+        '1': {name: punctuation.definition.struct.end.go}
+      patterns:
+      - include: '#struct-literal-innards'
+
+  struct-literal-innards:
+    patterns:
+    - include: '#struct-literal-field'
+    - include: '#comments'
+    - include: '#expressions'
+    # - include: '#types'
+    - match: (,)
+      name: punctuation.separator.mapping.go
+
+  struct-literal-field:
+    patterns:
+    - match: \b(?:([a-zA-Z0-9_]+)\s*(:))?
+      captures:
+        '1': {name: variable.definition.struct-field.go}
+        '2': {name: punctuation.definition.struct-field.go}
+
+  slice-literal:
+    patterns:
+    - name: meta.literal.slice.go
+      begin: (\[\])?(\*)?(?:([a-zA-Z0-9_]+)(\.))?([A-Za-z0-9_]+)(\{)
+      beginCaptures:
+        '1': {name: punctuation.definition.slice.go}
+        '2': {name: punctuation.definition.pointer.go}
+        '3': {name: entity.name.package.go}
+        '4': {name: punctuation.definition.type.go}
+        '5': {name: storage.type.go}
+        '6': {name: punctuation.definition.slice.begin.go}
+      end: (\})
+      endCaptures:
+        '1': {name: punctuation.definition.slice.end.go}
+      patterns:
+      - include: '#comments'
+      - include: '#expressions'
+      - match: (,)
+        name: punctuation.separator.sequence.go
+
+  map-literal:
+    patterns:
+    - name: meta.map-literal.go
+      begin: \b(?=map\s*\[)
+      end: \}
+      endCaptures:
+        '0': {name: punctuation.definition.map-literal.go}
+      patterns:
+      - name: meta.map-header.go
+        begin: \b(map)\b
+        beginCaptures:
+          '0': {name: storage.type.map.go}
+        end: (\{)
+        endCaptures:
+          '1': {name: punctuation.definition.map-literal.go}
+
+        patterns:
+        - include: '#types'
+
+      - name: meta.map-literal.body.go
+        begin: (?<=\{)
+        beginCaptures:
+          '0': {name: punctuation.definition.map-literal.go}
+        end: (?=\})
+        patterns:
+        - include: '#comments'
+        - include: '#expressions'
+
+
+
+  closure-literal:
+    patterns:
+    - name: meta.closure-literal.go
+      begin: (?=\bfunc\s*\()
+      end: (?<=\})
+      patterns:
+      - name: meta.function-header.go
+        begin: \b(func)\b
+        beginCaptures:
+          '0': {name: storage.type.function.go}
+        end: (?=\{)
+        patterns:
+        - include: '#param-list'
+        - include: '#types'
+
+      - name: meta.closure.body.go
+        begin: \{
+        beginCaptures:
+          '0': {name: punctuation.definition.closure.go}
+        end: \}
+        endCaptures:
+          '0': {name: punctuation.definition.closure.go}
+        patterns:
+        - include: '#comments'
+        - include: '#code'
+
+
+
+  method-decl:
+    patterns:
+    - name: meta.function.method.go
+      begin: (?=\bfunc\s+\()
+      end: (?=\{)
+      patterns:
+      - match: \b(func)\s+(\()\s*([A-Za-z0-9_]+)\s+(\*)?\s*([[:alnum:]_]+)\s*(\))\s+([a-zA-Z0-9_]+)
+        captures:
+          '1': {name: storage.type.function.go}
+          '2': {name: punctuation.definition.method.go}
+          '3': {name: variable.language.this.go}
+          '4': {name: punctuation.definition.method.go}
+          '5': {name: storage.type.go}
+          '6': {name: punctuation.definition.method.go}
+          '7': {name: entity.name.function.go}
+      - include: '#param-list'
+
+
+  function-decl:
+    patterns:
+    - name: meta.function.go
+      begin: (?=\bfunc\s+[A-Za-z0-9_])
+      end: (?=\{)
+      patterns:
+      - match: \b(func)\s+([a-zA-Z0-9_]+)
+        captures:
+          '1': {name: storage.type.function.go}
+          '2': {name: entity.name.function.go}
+      - include: '#param-list'
+
+
+  string_escaped_char:
+    patterns:
+    - name: constant.character.escape.go
+      match: \\(\\|[abfnrtv'"]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|[0-7]{3})
+    - name: invalid.illegal.unknown-escape.go
+      match: \\.
+
+  string_placeholder:
+    patterns:
+    - name: constant.other.placeholder.go
+      match: |-
+        (?x)%
+        (\d+\$)?                                    # field (argument #)
+        [#0\- +']*                                  # flags
+        [,;:_]?                                     # separator character (AltiVec)
+        ((-?\d+)|\*(-?\d+\$)?)?                     # minimum field width
+        (\.((-?\d+)|\*(-?\d+\$)?)?)?                # precision
+        [diouxXDOUeEfFgGaAcCsSqpnvtTbyYhHmMzZ%]     # conversion type
+
+
+  constants:
+    patterns:
+    - name: constant.language.go
+      match: \b(true|false|nil|iota)\b
+
+    - name: constant.numeric.floating-point.go
+      match: \b((\d+\.(\d+)?([eE][+-]?\d+)?|\d+[eE][+-]?\d+|\.\d+([eE][+-]?\d+)?)i?)\b
+
+    - name: constant.numeric.integer.go
+      match: \b(\d+i|0[xX][0-9A-Fa-f]+|0[0-7]*|[1-9][0-9]*)\b
+
+    - name: constant.other.rune.go
+      match: '''(?:[^''\\]|\\(?:\\|[abfnrtv'']|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|[0-7]{3}))'''
+
+  strings:
+    patterns:
+    - name: string.quoted.double.go
+      begin: '"'
+      beginCaptures:
+        '0': {name: punctuation.definition.string.begin.go}
+      end: '"'
+      endCaptures:
+        '0': {name: punctuation.definition.string.end.go}
+      patterns:
+      - include: '#string_placeholder'
+      - include: '#string_escaped_char'
+
+    - name: string.quoted.raw.go
+      begin: '`'
+      beginCaptures:
+        '0': {name: punctuation.definition.string.begin.go}
+      end: '`'
+      endCaptures:
+        '0': {name: punctuation.definition.string.end.go}
+      patterns:
+      - include: '#string_placeholder'
+      - include: source.gotemplate
+
+
+  punctuation:
+    patterns:
+    - name: punctuation.definition.comma.go
+      match: (,)
+
+    - name: punctuation.definition.dot.go
+      match: ([.])
+
+    - name: punctuation.definition.colon.go
+      match: (:)
+
+    - name: punctuation.definition.bracket.go
+      match: (\[|\]|{|}|\(|\))
+
+  comments:
+    patterns:
+    - name: comment.block.go
+      begin: /\*
+      end: \*/
+
+    - name: comment.line.double-slash.go
+      begin: //
+      end: \z
+
+  code:
+    patterns:
+    - include: '#comments'
+    - include: '#statements'
+    # - include: '#expressions'
+    - include: '#literals'
+
+    - include: '#block'
+
+    - include: '#variable-dot-access'
+    - include: '#operators'
+    - include: '#punctuation'
+    - include: '#keywords'
+
+  block:
+    patterns:
+    - begin: \{
+      beginCaptures:
+        '0': {name: punctuation.definition.block.begin.go}
+      end: \}
+      endCaptures:
+        '0': {name: punctuation.definition.block.end.go}
+      patterns:
+      - include: '#code'
+
+  top-level:
+    patterns:
+    - include: '#comments'
+
+    - name: keyword.other.go
+      match: \b(import|package)\b
+
+    - include: '#method-decl'
+    - include: '#function-decl'
+
+    - include: '#type-block'
+    - include: '#type-statement'
+
+    - include: '#var-and-const-blocks'
+    - include: '#var-and-const-statements'
+
+    - include: '#block'
+
+    - include: '#literals'
+    - include: '#keywords'
+    - include: '#statements'
+    - include: '#expressions'
+    - include: '#code'
+
+firstLineMatch: -[*]-( Mode:)? Go -[*]-
+keyEquivalent: ^~G

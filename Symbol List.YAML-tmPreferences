@@ -1,0 +1,10 @@
+# [PackageDev] target_format: plist, ext: tmPreferences
+
+name: Symbol List
+
+scope: source.go meta.function.go, source.go meta.function.method.go, source.go meta.struct.go, source.go meta.interface.go
+
+settings:
+    showInSymbolList: 1
+    symbolTransformation: 's/func\s+\([a-zA-Z0-9_]+\s+(\*?[a-zA-Z0-9_]+)\)/\1./g;'
+uuid: 01FBE156-8D74-4036-AF38-283708645115
